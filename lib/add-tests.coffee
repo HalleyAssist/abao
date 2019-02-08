@@ -1,10 +1,10 @@
 async = require 'async'
 _ = require 'underscore'
 csonschema = require 'csonschema'
+raml2json = require 'ramldt2jsonschema'
 
 # parent param optional
 addTests = (api, tests, hooks, parent, masterCallback, factory) ->
-  console.log 'Adding tests'
 
   # Handle 4th optional param
   if _.isFunction(parent)
@@ -13,8 +13,6 @@ addTests = (api, tests, hooks, parent, masterCallback, factory) ->
     parent = null
 
   resources = api.resources()
-  if resources.length == 0 
-    console.log 'Out of resources'
   return masterCallback() unless resources.length > 0
 
   # Iterate endpoint
@@ -22,6 +20,8 @@ addTests = (api, tests, hooks, parent, masterCallback, factory) ->
     path = resource.completeRelativeUri()
     params = {}
     query = {}
+    resource.ramlData ?= api.ramlData
+    resource.ramlPath ?= api.ramlPath
 
     # Setup param
     uriParameters = resource.uriParameters()
@@ -46,8 +46,7 @@ addTests = (api, tests, hooks, parent, masterCallback, factory) ->
         # Append new test to tests
         test = factory.create(testName, hooks.contentTests[testName])
         tests.push test
-        console.log 'Added Test: ' + testName
-		
+        
         # Update test.request
         test.request.path = path
         test.request.method = methodName
@@ -83,14 +82,25 @@ addTests = (api, tests, hooks, parent, masterCallback, factory) ->
           # otherwise filter in responses section for compatible content-types
           # (vendor tree, i.e. application/vnd.api+json)
           if bodyName == requestContentType || bodyName.match(/^application\/(.*\+)?json/i)
-            responseSchema = responseBody.schemaContent()
+            responseSchema = responseBody.schema()
             break
-        if responseSchema
-          if responseSchema.indexOf('$schema') != -1
-            test.response.schema = JSON.parse responseSchema
-          else
-            test.response.schema = csonschema.parse responseSchema
-			
+        if responseSchema.length > 0  # for RAML 0.8 backwards compatible RAML 1.0
+          try
+            if responseSchema.indexOf('$schema') != -1
+              test.response.schema = JSON.parse responseSchema
+            else
+              test.response.schema = csonschema.parse responseSchema
+          catch err
+            console.warn 'error parsing schema: ' + err
+        else  # types are only valid in RAML 1.0
+          try
+            typeName = response.body()[0].properties()[0].type()[0].replace('[]','')
+            raml2json.dt2js.setBasePath(api.ramlPath)
+            responseSchema = raml2json.dt2js api.ramlData, typeName
+            test.response.schema = responseSchema
+          catch err
+            console.warn 'error parsing type: ' + response.body()[0].properties()[0].type()[0] + '. error: ' + err
+
       methodCallback()
     , (err) ->
       return resourceCallback(err) if err
