@@ -23,7 +23,7 @@ addTests = (api, tests, hooks, parent, masterCallback, factory) ->
     resource.ramlPath ?= api.ramlPath
 
     # Setup param
-    uriParameters = resource.uriParameters
+    uriParameters = resource.allUriParameters
     if uriParameters
       for uriParam in uriParameters
         params[uriParam.name] = uriParam.example
