@@ -4,7 +4,7 @@
 
 require('source-map-support').install({handleUncaughtExceptions: false})
 async = require 'async'
-ramlParser = require 'raml-1-parser'
+raml2obj = require 'raml2obj'
 fs = require 'fs'
 path = require 'path'
 addHooks = require './add-hooks'
@@ -45,7 +45,7 @@ class Abao
         nofile = new Error 'unspecified RAML file'
         return callback nofile
 
-      ramlParser.loadApi config.ramlPath
+      raml2obj.parse config.ramlPath
         .then (raml) ->
           raml.ramlData = fs.readFileSync(config.ramlPath).toString()
           raml.ramlPath = path.dirname config.ramlPath
@@ -56,9 +56,12 @@ class Abao
 
     parseTestsFromRAML = (raml, callback) ->
       if !config.options.server
-        if raml.baseUri()
-          config.options.server = raml.baseUri().value()
-      addTests raml, tests, hooks, {}, callback, factory
+        if raml.baseUri
+          config.options.server = raml.baseUri
+      try
+        addTests raml, tests, hooks, {}, callback, factory
+      catch err
+        console.log 'error adding tests ' + err
       return # NOTREACHED
 
     runTests = (callback) ->

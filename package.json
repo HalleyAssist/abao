@@ -54,7 +54,7 @@
     "mocha": "~5.2.0",
     "mustache": "~2.3.0",
     "proxyquire": "^2.0.0",
-    "raml-1-parser": "^1.1.50",
+    "raml2obj": "^6.1.0",
     "ramldt2jsonschema": "^0.3.1",
     "request": "^2.85.0",
     "source-map-support": "^0.5.4",

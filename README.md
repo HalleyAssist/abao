@@ -30,8 +30,7 @@ is valid or not.
 
 ## RAML Support
 
-This version of the software **only** supports the [RAML-0.8][] specification.
-
+This version of the software **only** supports the [RAML-1.0][] specification.
 ## Installation
 
 Install stable version of full package globally.
