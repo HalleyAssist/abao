@@ -63,16 +63,15 @@ class Abao
         addTests raml, tests, hooks, {}, callback, factory
       catch err
         console.log 'error adding tests ' + err
-        callback err
       return # NOTREACHED
 
     runTests = (callback) ->
       runner = new Runner config.options, config.ramlPath
+      console.log JSON.stringify tests, null, 2
       try
         runner.run tests, hooks, callback
       catch
         console.log 'error running tests ' + err
-        callback err
       return # NOTREACHED
 
     async.waterfall [
