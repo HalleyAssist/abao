@@ -58,15 +58,21 @@ class Abao
       if !config.options.server
         if raml.baseUri
           config.options.server = raml.baseUri
+
       try
         addTests raml, tests, hooks, {}, callback, factory
       catch err
         console.log 'error adding tests ' + err
+        callback err
       return # NOTREACHED
 
     runTests = (callback) ->
       runner = new Runner config.options, config.ramlPath
-      runner.run tests, hooks, callback
+      try
+        runner.run tests, hooks, callback
+      catch
+        console.log 'error running tests ' + err
+        callback err
       return # NOTREACHED
 
     async.waterfall [

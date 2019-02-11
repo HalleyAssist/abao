@@ -8,14 +8,26 @@
 
 var
 	hooks = require("hooks"),
+	Q = require("q"),
+	Needle = require("needle"),
 	{ assert } = require("chai");
 
 //
 // Setup/Teardown
 //
 
-hooks.beforeAll(function (done) {
-	done();
+hooks.beforeAll(async function () {
+	console.log("Starting RAML test");
+	// assert api running
+	let defer = Q.defer();
+	setTimeout(function () {
+		Needle.get("127.0.0.1:3000/info", function (error, response) {
+			assert(!error, error);
+			assert(response.statusCode == 200, "response code");
+			defer.resolve(true);
+		});
+	}, 1000);
+	return defer.promise;
 });
 
 hooks.afterAll(function (done) {
