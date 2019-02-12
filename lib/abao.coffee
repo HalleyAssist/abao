@@ -32,7 +32,7 @@ class Abao
     config = @configuration
     tests = @tests
     hooks = @hooks
-    console.info 'Running HalleyAssist/Aboa#raml-1'
+
     # Inject the JSON refs schemas
     factory = new TestFactory(config.options.schemas)
 
