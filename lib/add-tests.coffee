@@ -66,9 +66,13 @@ addTests = (api, tests, hooks, parent, masterCallback, factory) ->
                 requestContentType = body.name
                 test.request.headers["Content-Type"] = requestContentType
                 try
-                  test.request.body = body.example
+                  if body.properties && body.properties.length > 0 && body.properties[0].examples && body.properties[0].examples.length > 0
+                    test.request.body = body.properties[0].examples[0].structuredValue
+                  else if body.examples && body.examples.length > 0
+                    test.request.body = body.examples[0].structuredValue
                 catch err
                   console.warn "cannot parse JSON example request body for #{test.name} => " + err
+                  console.log body
                 break
           test.request.params = params
           test.request.query = query

@@ -67,7 +67,7 @@ class Abao
 
     runTests = (callback) ->
       runner = new Runner config.options, config.ramlPath
-      console.log JSON.stringify tests, null, 2
+      #console.log JSON.stringify tests, null, 2
       try
         runner.run tests, hooks, callback
       catch
