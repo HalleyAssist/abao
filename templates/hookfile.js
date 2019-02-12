@@ -12,6 +12,12 @@ var
 	Needle = require("needle"),
 	{ assert } = require("chai");
 
+// Handle unhandleds
+process.on("unhandledRejection", (reason, p) => {
+	console.log("Unhandled Rejection at:", p, "reason:", reason);
+	process.exit(1);
+});
+
 //
 // Setup/Teardown
 //

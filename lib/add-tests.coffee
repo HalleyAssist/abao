@@ -72,7 +72,7 @@ addTests = (api, tests, hooks, parent, masterCallback, factory) ->
                     test.request.body = body.examples[0].structuredValue
                 catch err
                   console.warn "cannot parse JSON example request body for #{test.name} => " + err
-                  console.log body
+                  console.warn body
                 break
           test.request.params = params
           test.request.query = query
