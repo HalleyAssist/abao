@@ -1,7 +1,7 @@
 async = require "async"
 _ = require "underscore"
 csonschema = require "csonschema"
-raml2json = require "ramldt2jsonschema"
+jsonSchemaGenerator = require "json-schema-generator"
 
 # parent param optional
 addTests = (api, tests, hooks, parent, masterCallback, factory) ->
@@ -19,8 +19,6 @@ addTests = (api, tests, hooks, parent, masterCallback, factory) ->
     path = resource.parentUrl + resource.relativeUri
     params = {}
     query = {}
-    resource.ramlData ?= api.ramlData
-    resource.ramlPath ?= api.ramlPath
 
     # Setup param
     uriParameters = resource.allUriParameters
@@ -109,19 +107,19 @@ addTests = (api, tests, hooks, parent, masterCallback, factory) ->
               if bodyName == requestContentType || bodyName.match(/^application\/(.*\+)?json/i)
                 if responseBody.properties
                   for bodyProps in responseBody.properties
-                    if bodyProps.type == "array"
-                      responseType = bodyProps.items.name
-                    else if bodyProps.type == "object"
-                      responseType = bodyProps.name
+                    responseType = {}
+                    if bodyProps.type == "array" && bodyProps.items.examples
+                      responseType[bodyProps.key] = bodyProps.items.examples[0].structuredValue
+                      break
+                    else if bodyProps.type == "object" && bodyProps.examples
+                      responseType[bodyProps.key] = bodyProps.examples[0].structuredValue
+                      break
+              if responseType
+                break
                       
             if responseType
               try
-                raml2json.dt2js.setBasePath(api.ramlPath)
-                responseSchema = raml2json.dt2js api.ramlData, responseType
-                try
-                  test.response.schema = JSON.parse responseSchema
-                catch
-                  test.response.schema = responseSchema
+                test.response.schema = jsonSchemaGenerator responseType
               catch err
                 console.warn "error parsing type: " + responseType + ". error: " + err
             
