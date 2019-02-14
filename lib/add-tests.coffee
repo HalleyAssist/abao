@@ -103,22 +103,25 @@ addTests = (api, tests, hooks, parent, masterCallback, factory) ->
               console.warn "error parsing schema: " + err
           else if responseBodies # types are only valid in RAML 1.0
             responseType = null
+            responseKey = ""
             for responseBody in responseBodies
               bodyName = responseBody.name
               if bodyName == requestContentType || bodyName.match(/^application\/(.*\+)?json/i)
                 if responseBody.properties
                   for bodyProps in responseBody.properties
                     responseType ?= {}
+                    responseKey = bodyProps.key
                     if bodyProps.type == "array" && bodyProps.items.examples
-                      responseType[bodyProps.key] = [ bodyProps.items.examples[0].structuredValue ]
+                      responseType[responseKey] = [ bodyProps.items.examples[0].structuredValue ]
                       break
                     else if bodyProps.type == "object" && bodyProps.examples
-                      responseType[bodyProps.key] = bodyProps.examples[0].structuredValue
+                      responseType[responseKey] = bodyProps.examples[0].structuredValue
                       break
                       
             if responseType
               try
                 test.response.schema = jsonSchemaGenerator responseType
+                deepRemoveKey "minItems", test.response.schema
               catch err
                 console.warn "error parsing type: " + responseType + ". error: " + err
       methodCallback()
@@ -129,6 +132,13 @@ addTests = (api, tests, hooks, parent, masterCallback, factory) ->
       # Recursive
       addTests resource, tests, hooks, {path, params}, resourceCallback, factory
   , masterCallback
+
+deepRemoveKey = (key, obj) ->
+  for prop, val of obj
+    if prop == key
+      obj[prop] = undefined
+    else if typeof obj[prop] == "object"
+      arguments.callee key, obj[prop]
 
 
 module.exports = addTests
