@@ -24,7 +24,8 @@ addTests = (api, tests, hooks, parent, masterCallback, factory) ->
     uriParameters = resource.allUriParameters
     if uriParameters
       for uriParam in uriParameters
-        params[uriParam.name] = uriParam.example
+        if uriParam.examples
+          params[uriParam.name] = uriParam.examples[0].structuredValue
 
     # Iterate response method
     async.each resource.methods, (resourceMethod, methodCallback) ->
