@@ -5,8 +5,6 @@
 require('source-map-support').install({handleUncaughtExceptions: false})
 async = require 'async'
 raml2obj = require 'raml2obj'
-fs = require 'fs'
-path = require 'path'
 addHooks = require './add-hooks'
 addTests = require './add-tests'
 TestFactory = require './test'
@@ -47,8 +45,6 @@ class Abao
 
       raml2obj.parse config.ramlPath
         .then (raml) ->
-          raml.ramlData = fs.readFileSync(config.ramlPath).toString()
-          raml.ramlPath = path.dirname config.ramlPath
           return callback null, raml
         .catch (err) ->
           return callback err

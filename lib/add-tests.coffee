@@ -108,22 +108,19 @@ addTests = (api, tests, hooks, parent, masterCallback, factory) ->
               if bodyName == requestContentType || bodyName.match(/^application\/(.*\+)?json/i)
                 if responseBody.properties
                   for bodyProps in responseBody.properties
-                    responseType = {}
+                    responseType ?= {}
                     if bodyProps.type == "array" && bodyProps.items.examples
-                      responseType[bodyProps.key] = bodyProps.items.examples[0].structuredValue
+                      responseType[bodyProps.key] = [ bodyProps.items.examples[0].structuredValue ]
                       break
                     else if bodyProps.type == "object" && bodyProps.examples
                       responseType[bodyProps.key] = bodyProps.examples[0].structuredValue
                       break
-              if responseType
-                break
                       
             if responseType
               try
                 test.response.schema = jsonSchemaGenerator responseType
               catch err
                 console.warn "error parsing type: " + responseType + ". error: " + err
-            
       methodCallback()
     , (err) ->
       if err
