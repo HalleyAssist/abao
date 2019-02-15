@@ -122,7 +122,7 @@ addTests = (api, tests, hooks, parent, masterCallback, factory) ->
             if responseType
               try
                 test.response.schema = jsonSchemaGenerator responseType
-                deepRemoveKey "minItems", test.response.schema
+                deepRemoveKeys ["minItems", "minLength"], test.response.schema
               catch err
                 console.warn "error parsing type: " + responseType + ". error: " + err
       methodCallback()
@@ -134,12 +134,12 @@ addTests = (api, tests, hooks, parent, masterCallback, factory) ->
       addTests resource, tests, hooks, {path, params}, resourceCallback, factory
   , masterCallback
 
-deepRemoveKey = (key, obj) ->
+deepRemoveKeys = (keys, obj) ->
   for prop, val of obj
-    if prop == key
+    if keys.includes prop
       obj[prop] = undefined
     else if typeof obj[prop] == "object"
-      arguments.callee key, obj[prop]
+      arguments.callee keys, obj[prop]
 
 
 module.exports = addTests
