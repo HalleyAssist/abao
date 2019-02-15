@@ -65,8 +65,12 @@ addTests = (api, tests, hooks, parent, masterCallback, factory) ->
                 requestContentType = body.name
                 test.request.headers["Content-Type"] = requestContentType
                 try
-                  if body.properties && body.properties.length > 0 && body.properties[0].examples && body.properties[0].examples.length > 0
-                    test.request.body = body.properties[0].examples[0].structuredValue
+                  if body.properties && body.properties.length > 0
+                    if body.properties[0].examples && body.properties[0].examples.length > 0
+                      if body.properties[0].examples.length == 1
+                        test.request.body = body.properties[0].examples[0].structuredValue
+                      else if body.properties[0].examples.length == 2
+                        test.request.body = body.properties[0].examples[1].structuredValue
                   else if body.examples && body.examples.length > 0
                     test.request.body = body.examples[0].structuredValue
                 catch err
