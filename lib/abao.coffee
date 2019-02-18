@@ -5,6 +5,8 @@
 require('source-map-support').install({handleUncaughtExceptions: false})
 async = require 'async'
 raml2obj = require 'raml2obj'
+fs = require 'fs'
+path = require "path"
 addHooks = require './add-hooks'
 addTests = require './add-tests'
 TestFactory = require './test'
@@ -45,6 +47,8 @@ class Abao
 
       raml2obj.parse config.ramlPath
         .then (raml) ->
+          raml.ramlPath = path.dirname config.ramlPath
+          raml.ramlData = fs.readFileSync(config.ramlPath).toString()
           return callback null, raml
         .catch (err) ->
           return callback err
@@ -58,12 +62,12 @@ class Abao
       try
         addTests raml, tests, hooks, {}, callback, factory
       catch err
-        console.log 'error adding tests ' + err
+        console.warn 'error adding tests ' + err
       return # NOTREACHED
 
     runTests = (callback) ->
       runner = new Runner config.options, config.ramlPath
-      #console.log JSON.stringify tests, null, 2
+      console.log JSON.stringify tests, null, 2
       try
         runner.run tests, hooks, callback
       catch

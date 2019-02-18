@@ -1,7 +1,7 @@
 async = require "async"
 _ = require "underscore"
 csonschema = require "csonschema"
-jsonSchemaGenerator = require "json-schema-generator"
+raml2json = require "ramldt2jsonschema"
 
 # parent param optional
 addTests = (api, tests, hooks, parent, masterCallback, factory) ->
@@ -19,6 +19,8 @@ addTests = (api, tests, hooks, parent, masterCallback, factory) ->
     path = resource.parentUrl + resource.relativeUri
     params = {}
     query = {}
+    resource.ramlPath ?= api.ramlPath
+    resource.ramlData ?= api.ramlData
 
     # Setup param
     uriParameters = resource.allUriParameters
@@ -104,27 +106,32 @@ addTests = (api, tests, hooks, parent, masterCallback, factory) ->
               console.warn "error parsing schema: " + err
           else if responseBodies # types are only valid in RAML 1.0
             responseType = null
-            responseKey = ""
+            console.log testName
             for responseBody in responseBodies
-              bodyName = responseBody.name
-              if bodyName == requestContentType || bodyName.match(/^application\/(.*\+)?json/i)
-                if responseBody.properties
-                  for bodyProps in responseBody.properties
-                    responseType ?= {}
-                    responseKey = bodyProps.key
-                    if bodyProps.type == "array" && bodyProps.items.examples
-                      responseType[responseKey] = [ bodyProps.items.examples[0].structuredValue ]
-                      break
-                    else if bodyProps.type == "object" && bodyProps.examples
-                      responseType[responseKey] = bodyProps.examples[0].structuredValue
-                      break
-                      
+              bodyKey = responseBody.key
+              if bodyKey == requestContentType || bodyKey.match(/^application\/(.*\+)?json/i)
+                if responseBody.rawType
+                  responseType = responseBody.rawType.name
+                  break
+                else if responseBody.type == "array"
+                  if responseBody.items.rawType
+                    responseType = responseBody.items.rawType.name
+                    break
+                  else
+                    responseType = responseBody.items.type
+                    break
+                else if responseBody.type != "object"
+                  responseType = responseBody.type
+                  break
+            console.log responseType
             if responseType
               try
-                test.response.schema = jsonSchemaGenerator responseType
-                deepRemoveKeys ["minItems", "minLength"], test.response.schema
+                # should use raml type to json schema rather than schema-ify the examples.
+                raml2json.dt2js.setBasePath(resource.ramlPath)
+                test.response.schema = raml2json.dt2js resource.ramlData, responseType
               catch err
                 console.warn "error parsing type: " + responseType + ". error: " + err
+
       methodCallback()
     , (err) ->
       if err
@@ -134,12 +141,9 @@ addTests = (api, tests, hooks, parent, masterCallback, factory) ->
       addTests resource, tests, hooks, {path, params}, resourceCallback, factory
   , masterCallback
 
-deepRemoveKeys = (keys, obj) ->
-  for prop, val of obj
-    if keys.includes prop
-      obj[prop] = undefined
-    else if typeof obj[prop] == "object"
-      arguments.callee keys, obj[prop]
-
+getTypeName = (body) ->
+  console.log body
+  return body.items.name if body.type == "array"
+  return body.name if body.type == "object"
 
 module.exports = addTests
