@@ -106,7 +106,6 @@ addTests = (api, tests, hooks, parent, masterCallback, factory) ->
               console.warn "error parsing schema: " + err
           else if responseBodies # types are only valid in RAML 1.0
             responseType = null
-            console.log testName
             for responseBody in responseBodies
               bodyKey = responseBody.key
               if bodyKey == requestContentType || bodyKey.match(/^application\/(.*\+)?json/i)
@@ -123,7 +122,7 @@ addTests = (api, tests, hooks, parent, masterCallback, factory) ->
                 else if responseBody.type != "object"
                   responseType = responseBody.type
                   break
-            console.log responseType
+                  
             if responseType
               try
                 # should use raml type to json schema rather than schema-ify the examples.
