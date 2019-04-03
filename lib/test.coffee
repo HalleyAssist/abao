@@ -90,12 +90,19 @@ class Test
       return JSON.stringify value
 
     options =
-      body: asString @request.body
       headers: @request.headers
       method: @request.method
       qs: @request.query
       timeout: 10000                   # 10 secs
       url: @url()
+    
+    if @request.headers["Content-Type"]
+      if @request.headers["Content-Type"].match(/^application\/(.*\+)?json/i)
+        options.body = asString @request.body
+      else if @request.headers["Content-Type"].match(/^multipart\/form\-data/i)
+        options.formData = @request.body
+    else
+      options.body = asString @request.body     # should not happen
 
     makeHTTPRequest = (callback) ->
       requestCB = (error, response, body) ->

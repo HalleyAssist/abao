@@ -63,8 +63,8 @@ addTests = (api, tests, hooks, parent, masterCallback, factory) ->
             # (to support vendor tree types, i.e. application/vnd.api+json)
             # Currently only supports json, not XML or others
             for body in resourceMethod.body
+              requestContentType = body.key
               if body.key.match(/^application\/(.*\+)?json/i)
-                requestContentType = body.key
                 test.request.headers["Content-Type"] = requestContentType
                 try
                   if body.properties && body.properties.length > 0
@@ -79,6 +79,8 @@ addTests = (api, tests, hooks, parent, masterCallback, factory) ->
                   console.warn "cannot parse JSON example request body for #{test.name} => " + err
                   console.warn body
                 break if test.request.body
+              else if body.key.match(/^multipart\/form\-data/i)
+                test.request.headers["Content-Type"] = requestContentType
           test.request.params = params
           test.request.query = query
 
