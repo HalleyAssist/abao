@@ -26,6 +26,8 @@ addTests = (api, tests, hooks, parent, masterCallback, factory) ->
     uriParameters = resource.allUriParameters
     if uriParameters
       for uriParam in uriParameters
+        if uriParam.example
+          params[uriParam.name] = uriParam.example
         if uriParam.examples
           params[uriParam.name] = uriParam.examples[0].structuredValue
 
@@ -37,7 +39,10 @@ addTests = (api, tests, hooks, parent, masterCallback, factory) ->
       if resourceMethod.queryParameters
         for queryParam in resourceMethod.queryParameters
           if queryParam.required
-            query[queryParam.name] = queryParam.example
+            if queryParam.example
+              query[queryParam.name] = queryParam.example
+            if queryParam.examples
+              query[queryParam.name] = queryParam.examples[0].structuredValue
 
       # Iterate response status
       if resourceMethod.responses
