@@ -18,7 +18,6 @@ addTests = (api, tests, hooks, parent, masterCallback, factory) ->
   async.each api.resources, (resource, resourceCallback) ->
     path = resource.parentUrl + resource.relativeUri
     params = {}
-    query = {}
     resource.ramlPath ?= api.ramlPath
     resource.ramlData ?= api.ramlData
 
@@ -35,6 +34,7 @@ addTests = (api, tests, hooks, parent, masterCallback, factory) ->
     async.each resource.methods, (resourceMethod, methodCallback) ->
       methodName = resourceMethod.method.toUpperCase()
 
+      query = {}
       # Setup query
       if resourceMethod.queryParameters
         for queryParam in resourceMethod.queryParameters
@@ -69,8 +69,8 @@ addTests = (api, tests, hooks, parent, masterCallback, factory) ->
             # Currently only supports json, not XML or others
             for body in resourceMethod.body
               requestContentType = body.key
-              if body.key.match(/^application\/(.*\+)?json/i)
-                test.request.headers["Content-Type"] = requestContentType
+              test.request.headers["Content-Type"] = requestContentType
+              if body.key.match(/^application\/(.*\+)?json/i) || body.key.match(/^text\/plain/i)
                 try
                   if body.properties && body.properties.length > 0
                     if body.properties[0].rawType && body.properties[0].rawType.example
@@ -84,8 +84,6 @@ addTests = (api, tests, hooks, parent, masterCallback, factory) ->
                   console.warn "cannot parse JSON example request body for #{test.name} => " + err
                   console.warn body
                 break if test.request.body
-              else if body.key.match(/^multipart\/form\-data/i)
-                test.request.headers["Content-Type"] = requestContentType
           test.request.params = params
           test.request.query = query
 
@@ -102,7 +100,7 @@ addTests = (api, tests, hooks, parent, masterCallback, factory) ->
               # expect content-type of response body to be identical to request body
               # otherwise filter in responses section for compatible content-types
               # (vendor tree, i.e. application/vnd.api+json)
-              if bodyName == requestContentType || bodyName.match(/^application\/(.*\+)?json/i)
+              if bodyName.match(/^application\/(.*\+)?json/i)
                 responseSchema = responseBody.schema
                 break
 
@@ -118,7 +116,7 @@ addTests = (api, tests, hooks, parent, masterCallback, factory) ->
             responseType = null
             for responseBody in responseBodies
               bodyKey = responseBody.key
-              if bodyKey == requestContentType || bodyKey.match(/^application\/(.*\+)?json/i)
+              if bodyKey.match(/^application\/(.*\+)?json/i)
                 if responseBody.rawType
                   responseType = responseBody.rawType.name
                   break
