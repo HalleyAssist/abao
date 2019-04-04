@@ -76,10 +76,16 @@ addTests = (api, tests, hooks, parent, masterCallback, factory) ->
                     if body.properties[0].rawType && body.properties[0].rawType.example
                       test.request.body = body.properties[0].rawType.example
                     else if body.properties[0].examples && body.properties[0].examples.length > 0
-                      test.request.body = body.properties[0].examples[0].structuredValue
+                      if body.key.match(/^text\/plain/i)
+                        test.request.body = body.properties[0].examples[0].structuredValue
+                      else
+                        test.request.body = JSON.parse(body.properties[0].examples[0].value)
                     break if test.request.body
                   if body.examples && body.examples.length > 0
-                    test.request.body = body.examples[0].structuredValue
+                    if body.key.match(/^text\/plain/i)
+                      test.request.body = body.examples[0].structuredValue
+                    else
+                      test.request.body = JSON.parse(body.examples[0].value)
                 catch err
                   console.warn "cannot parse JSON example request body for #{test.name} => " + err
                   console.warn body
