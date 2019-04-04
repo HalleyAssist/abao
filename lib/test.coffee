@@ -158,6 +158,7 @@ class Test
       response.status = response.statusCode
 
     # Body
+    @response.body = body
     if @response.schema
       # Empty?
       if body is ''
