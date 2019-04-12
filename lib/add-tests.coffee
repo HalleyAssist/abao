@@ -62,7 +62,7 @@ addTests = (api, tests, hooks, parent, masterCallback, factory) ->
           if resourceMethod.headers
             for header in resourceMethod.headers
               if header.examples.length > 0
-                test.request.headers[header.name] = header.example[0].structuredValue
+                test.request.headers[header.name] = header.examples[0].structuredValue
 
           if resourceMethod.body
             # select compatible content-type in request body
