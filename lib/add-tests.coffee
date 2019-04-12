@@ -61,7 +61,8 @@ addTests = (api, tests, hooks, parent, masterCallback, factory) ->
           
           if resourceMethod.headers
             for header in resourceMethod.headers
-              test.request.headers[header.name] = header.example
+              if header.examples.length > 0
+                test.request.headers[header.name] = header.example[0].structuredValue
 
           if resourceMethod.body
             # select compatible content-type in request body
@@ -87,8 +88,8 @@ addTests = (api, tests, hooks, parent, masterCallback, factory) ->
                     else
                       test.request.body = JSON.parse(body.examples[0].value)
                 catch err
-                  console.warn "cannot parse JSON example request body for #{test.name} => " + err
-                  console.warn body
+                  console.warn "Cannot parse JSON example request body for #{test.name} => " + err
+                  console.warn JSON.stringify body, null, 2
                 break if test.request.body
           test.request.params = params
           test.request.query = query
@@ -143,7 +144,7 @@ addTests = (api, tests, hooks, parent, masterCallback, factory) ->
                 raml2json.dt2js.setBasePath(resource.ramlPath)
                 test.response.schema = raml2json.dt2js resource.ramlData, responseType
               catch err
-                console.warn "error parsing type: " + responseType + ". error: " + err
+                console.warn "ramldt2jsonschema: error parsing type: " + responseType + ". Error: " + err
 
       methodCallback()
     , (err) ->
