@@ -60,7 +60,7 @@ class Abao
           config.options.server = raml.baseUri
 
       try
-        addTests raml, tests, hooks, {}, callback, factory
+        addTests raml, tests, hooks, {}, callback, factory, config.options.sorted
       catch err
         console.warn 'error adding tests ' + err
       return # NOTREACHED

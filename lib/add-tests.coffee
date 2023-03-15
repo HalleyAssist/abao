@@ -4,7 +4,7 @@ csonschema = require "csonschema"
 raml2json = require "ramldt2jsonschema"
 
 # parent param optional
-addTests = (api, tests, hooks, parent, masterCallback, factory) ->
+addTests = (api, tests, hooks, parent, masterCallback, factory, sortFirst) ->
 
   # Handle 4th optional param
   if _.isFunction(parent)
@@ -29,6 +29,53 @@ addTests = (api, tests, hooks, parent, masterCallback, factory) ->
           params[uriParam.name] = uriParam.example
         if uriParam.examples
           params[uriParam.name] = uriParam.examples[0].structuredValue
+
+    # In case of issue #8, resource does not define methods
+    resource.methods ?= []
+
+    # Sort tests (if required)
+    if sortFirst && resource.methods.length > 1
+      methodTests = [
+          method: 'CONNECT', tests: []
+        ,
+          method: 'OPTIONS', tests: []
+        ,
+          method: 'POST',    tests: []
+        ,
+          method: 'GET',     tests: []
+        ,
+          method: 'HEAD',    tests: []
+        ,
+          method: 'PUT',     tests: []
+        ,
+          method: 'PATCH',   tests: []
+        ,
+          method: 'DELETE',  tests: []
+        ,
+          method: 'TRACE',   tests: []
+      ]
+
+      # Group endpoint tests by method name
+      _.each methodTests, (methodTest) ->
+        isSameMethod = (test) ->
+          return methodTest.method == test.method.toUpperCase()
+
+        ans = _.partition resource.methods, isSameMethod
+        if ans[0].length != 0
+          _.each ans[0], (test) -> methodTest.tests.push test
+          resource.methods = ans[1]
+
+      # Shouldn't happen unless new HTTP method introduced...
+      leftovers = resource.methods
+      if leftovers.length > 1
+        console.error 'unknown method calls present!', leftovers
+
+      # Now put them back, but in order of methods listed above
+      sortedTests = _.map methodTests, (methodTest) -> return methodTest.tests
+      leftoverTests = _.map leftovers, (leftover) -> return leftover
+      reassembled = _.flatten [_.reject sortedTests,   _.isEmpty,
+                                   _.reject leftoverTests, _.isEmpty]
+      resource.methods = reassembled
 
     # Iterate response method
     async.each resource.methods, (resourceMethod, methodCallback) ->
@@ -152,7 +199,7 @@ addTests = (api, tests, hooks, parent, masterCallback, factory) ->
         console.log err
       return resourceCallback(err) if err
       # Recursive
-      addTests resource, tests, hooks, {path, params}, resourceCallback, factory
+      addTests resource, tests, hooks, {path, params}, resourceCallback, factory, sortFirst
   , masterCallback
 
 getTypeName = (body) ->
