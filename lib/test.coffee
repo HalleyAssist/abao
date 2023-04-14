@@ -193,11 +193,22 @@ class Test
         throw new Error detail
 
       if result.valid == false
+        # Provide the exact reasons for validation failure
+        subErrors = []
+        if result.error?.subErrors
+          for subError in result.error.subErrors
+            subErrors.push {
+              message: subError.message,
+              dataPath: subError.dataPath
+            }
+
         detail = """
           schema validation failed:
             #{result.error?.message}
 
           #{JSON.stringify instance, null, 2}
+
+          Possible reasons: #{JSON.stringify subErrors, null, 2}
         """
         throw new Error detail
 
