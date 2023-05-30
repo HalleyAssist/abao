@@ -202,6 +202,10 @@ class Test
               dataPath: subError.dataPath
             }
 
+            # subErrors can be duplicated for each object, don't need all
+            if subErrors.length > 5
+              break
+
         detail = """
           schema validation failed:
             #{result.error?.message}
