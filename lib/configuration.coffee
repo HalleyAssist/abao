@@ -46,6 +46,7 @@ applyConfiguration = (config) ->
       header: null
       names: false
       hookfiles: null
+      typesfile: null
       grep: ''
       invert: false
       'hooks-only': false

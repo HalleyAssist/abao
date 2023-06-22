@@ -261,6 +261,9 @@ Options:
                     DELETE, TRACE.                                     [boolean]
   --template        Specify Mustache template file to use for generating hooks
                                                                         [string]
+  --typesfile,      Path to types.raml file. If supplied, will try to use
+                    the updated webapi-parser for type schema 
+                    generation                                          [string]                                                                       
   --help            Show usage information and exit                    [boolean]
   --version         Show version number and exit                       [boolean]
 ```

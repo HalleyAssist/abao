@@ -15,11 +15,13 @@ addTests = (api, tests, hooks, parent, masterCallback, factory, sortFirst) ->
   return masterCallback() unless api.resources
 
   # Iterate endpoint
-  async.each api.resources, (resource, resourceCallback) ->
+  async.eachSeries api.resources, (resource, resourceCallback) ->
     path = resource.parentUrl + resource.relativeUri
     params = {}
     resource.ramlPath ?= api.ramlPath
     resource.ramlData ?= api.ramlData
+    resource.ramlTypes ?= api.ramlTypes
+    resource.webApiModel ?= api.webApiModel
 
     # Setup param
     uriParameters = resource.allUriParameters
@@ -78,7 +80,7 @@ addTests = (api, tests, hooks, parent, masterCallback, factory, sortFirst) ->
       resource.methods = reassembled
 
     # Iterate response method
-    async.each resource.methods, (resourceMethod, methodCallback) ->
+    async.eachSeries resource.methods, (resourceMethod, methodCallback) ->
       methodName = resourceMethod.method.toUpperCase()
 
       query = {}
@@ -92,108 +94,114 @@ addTests = (api, tests, hooks, parent, masterCallback, factory, sortFirst) ->
               query[queryParam.name] = queryParam.examples[0].structuredValue
 
       # Iterate response status
-      if resourceMethod.responses
-        for response in resourceMethod.responses
-          status = response.code
-          testName = "#{methodName} #{path} -> #{status}"
+      if (!resourceMethod.responses)
+        return methodCallback()
 
-          # Append new test to tests
-          test = factory.create(testName, hooks.contentTests[testName])
-          tests.push test
+      async.eachSeries resourceMethod.responses, (response, responseCallback) ->
+        status = response.code
+        testName = "#{methodName} #{path} -> #{status}"
 
-          # Update test.request
-          test.request.path = path
-          test.request.method = methodName
-          test.request.headers = {}
-          
-          if resourceMethod.headers
-            for header in resourceMethod.headers
-              if header.examples.length > 0
-                test.request.headers[header.name] = header.examples[0].structuredValue
+        # Append new test to tests
+        test = factory.create(testName, hooks.contentTests[testName])
+        tests.push test
 
-          if resourceMethod.body
-            # select compatible content-type in request body
-            # (to support vendor tree types, i.e. application/vnd.api+json)
-            # Currently only supports json, not XML or others
-            for body in resourceMethod.body
-              requestContentType = body.key
-              test.request.headers["Content-Type"] = requestContentType
-              if body.key.match(/^application\/(.*\+)?json/i) || body.key.match(/^text\/plain/i)
-                try
-                  if body.examples && body.examples.length > 0
-                    if body.key.match(/^text\/plain/i)
-                      test.request.body = body.examples[0].structuredValue
-                    else
-                      test.request.body = JSON.parse(body.examples[0].value)
-                  break if test.request.body
-                  if body.properties && body.properties.length > 0
-                    if body.properties[0].rawType && body.properties[0].rawType.example
-                      test.request.body[body.properties[0]] = body.properties[0].rawType.example
-                    if body.properties[0].examples && body.properties[0].examples.length > 0
-                      if body.key.match(/^text\/plain/i)
-                        test.request.body[body.properties[0]] = body.properties[0].examples[0].structuredValue
-                      else
-                        test.request.body = JSON.parse(body.properties[0].examples[0].value)
-                catch err
-                  console.warn "Cannot parse JSON example request body for #{test.name} => " + err
-                  console.warn JSON.stringify body, null, 2
-                break if test.request.body
-          test.request.params = params
-          test.request.query = query
+        # Update test.request
+        test.request.path = path
+        test.request.method = methodName
+        test.request.headers = {}
+        
+        if resourceMethod.headers
+          for header in resourceMethod.headers
+            if header.examples.length > 0
+              test.request.headers[header.name] = header.examples[0].structuredValue
 
-          # Update test.response
-          test.response.status = status
-          test.response.schema = null
-
-          responseBodies = response.body
-          responseSchema = null
-          if responseBodies
-            for responseBody in responseBodies
-              # name will be equal to content-type
-              bodyName = responseBody.name
-              # expect content-type of response body to be identical to request body
-              # otherwise filter in responses section for compatible content-types
-              # (vendor tree, i.e. application/vnd.api+json)
-              if bodyName.match(/^application\/(.*\+)?json/i)
-                responseSchema = responseBody.schema
-                break
-
-          if responseSchema  # RAML 0.8 uses schemas
-            try
-              if responseSchema.indexOf("$schema") != -1
-                test.response.schema = JSON.parse responseSchema
-              else
-                test.response.schema = csonschema.parse responseSchema
-            catch err
-              console.warn "error parsing schema: " + err
-          else if responseBodies # types are only valid in RAML 1.0
-            responseType = null
-            for responseBody in responseBodies
-              bodyKey = responseBody.key
-              if bodyKey.match(/^application\/(.*\+)?json/i)
-                if responseBody.rawType
-                  responseType = responseBody.rawType.name
-                  break
-                else if responseBody.type == "array"
-                  if responseBody.items.rawType
-                    responseType = responseBody.items.rawType.name
-                    break
-                  else
-                    responseType = responseBody.items.type
-                    break
-                else if responseBody.type != "object"
-                  responseType = responseBody.type
-                  break
-                  
-            if responseType
+        if resourceMethod.body
+          # select compatible content-type in request body
+          # (to support vendor tree types, i.e. application/vnd.api+json)
+          # Currently only supports json, not XML or others
+          for body in resourceMethod.body
+            requestContentType = body.key
+            test.request.headers["Content-Type"] = requestContentType
+            if body.key.match(/^application\/(.*\+)?json/i) || body.key.match(/^text\/plain/i)
               try
-                # should use raml type to json schema rather than schema-ify the examples.
-                raml2json.dt2js.setBasePath(resource.ramlPath)
-                test.response.schema = raml2json.dt2js resource.ramlData, responseType
+                if body.examples && body.examples.length > 0
+                  if body.key.match(/^text\/plain/i)
+                    test.request.body = body.examples[0].structuredValue
+                  else
+                    test.request.body = JSON.parse(body.examples[0].value)
+                break if test.request.body
+                if body.properties && body.properties.length > 0
+                  if body.properties[0].rawType && body.properties[0].rawType.example
+                    test.request.body[body.properties[0]] = body.properties[0].rawType.example
+                  if body.properties[0].examples && body.properties[0].examples.length > 0
+                    if body.key.match(/^text\/plain/i)
+                      test.request.body[body.properties[0]] = body.properties[0].examples[0].structuredValue
+                    else
+                      test.request.body = JSON.parse(body.properties[0].examples[0].value)
               catch err
-                console.warn "ramldt2jsonschema: error parsing type: " + responseType + ". Error: " + err
+                console.warn "Cannot parse JSON example request body for #{test.name} => " + err
+                console.warn JSON.stringify body, null, 2
+              break if test.request.body
+        test.request.params = params
+        test.request.query = query
 
-      methodCallback()
+        # Update test.response
+        test.response.status = status
+        test.response.schema = null
+
+        responseBodies = response.body
+        responseSchema = null
+        if responseBodies
+          for responseBody in responseBodies
+            # name will be equal to content-type
+            bodyName = responseBody.name
+            # expect content-type of response body to be identical to request body
+            # otherwise filter in responses section for compatible content-types
+            # (vendor tree, i.e. application/vnd.api+json)
+            if bodyName.match(/^application\/(.*\+)?json/i)
+              responseSchema = responseBody.schema
+              break
+
+        if responseSchema  # RAML 0.8 uses schemas
+          try
+            if responseSchema.indexOf("$schema") != -1
+              test.response.schema = JSON.parse responseSchema
+            else
+              test.response.schema = csonschema.parse responseSchema
+          catch err
+            console.warn "error parsing schema: " + err
+        else if responseBodies # types are only valid in RAML 1.0
+          responseType = null
+          for responseBody in responseBodies
+            bodyKey = responseBody.key
+            if bodyKey.match(/^application\/(.*\+)?json/i)
+              if responseBody.rawType
+                responseType = responseBody.rawType.name
+                break
+              else if responseBody.type == "array"
+                if responseBody.items.rawType
+                  responseType = responseBody.items.rawType.name
+                  break
+                else
+                  responseType = responseBody.items.type
+                  break
+              else if responseBody.type != "object"
+                responseType = responseBody.type.replace('types.', '')
+                break
+        
+          # Skip proper RAML -> JSON schema conversion if just schema-ifying the examples
+          if !responseType
+            return responseCallback()
+
+          # Use webapi-parser where possible, otherwise revert to raml2json v0.3.1 (more reliable but schema can be inaccurate)
+          if (resource.webApiModel)
+            test.response.schema = JSON.parse(resource.webApiModel.getDeclarationByName(responseType).buildJsonSchema())
+          else
+            raml2json.dt2js.setBasePath(resource.ramlPath)
+            test.response.schema = raml2json.dt2js resource.ramlData, responseType
+
+        return responseCallback()
+      , methodCallback
     , (err) ->
       if err
         console.log err

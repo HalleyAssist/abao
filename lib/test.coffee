@@ -10,16 +10,19 @@ pkg = require '../package'
 request = require 'request'
 requestPkg = require 'request/package'
 tv4 = require 'tv4'
-
+Ajv = require("ajv-draft-04")
+addFormats = require("ajv-formats")
 
 class TestFactory
-  constructor: (pattern) ->
+  constructor: (config) ->
     'use strict'
-    if pattern
-      files = glob.sync pattern
+    @configuration = config
+
+    if config.options.schemas
+      files = glob.sync config.options.schemas
 
       if files.length == 0
-        detail = "no external schema files found matching pattern '#{pattern}'"
+        detail = "no external schema files found matching pattern '#{config.options.schemas}'"
         throw new Error detail
 
       console.info 'processing external schema file(s):'
@@ -35,14 +38,15 @@ class TestFactory
 
   create: (name, contentTest) ->
     'use strict'
-    return new Test name, contentTest
+    return new Test name, contentTest, @configuration
 
 
 
 class Test
-  constructor: (@name, @contentTest) ->
+  constructor: (@name, @contentTest, @configuration) ->
     'use strict'
     @name ?= ''
+    @configuration ?= {options: {}}
     @skip = false
 
     @request =
@@ -180,41 +184,70 @@ class Test
       checkRecursive = false
       banUnknown = false
       schema = @response.schema
-      result = tv4.validateResult instance, schema, checkRecursive, banUnknown
 
-      if result.missing.length != 0
-        detail = """
-          missing/unresolved JSON schema $refs:
-            #{result.missing.join '\n'}
+      # Use ajv validator when using webapi-parser, otherwise fallback to TV4
+      if (@configuration.options.typesfile)
+        # Compile schema for Ajv. 
+        validate = null
+        try
+          # Add schema exceptions and formats as needed
+          ajv = new Ajv()
+          ajv.addVocabulary(["example", "x-amf-examples"])
+          addFormats(ajv)
 
-          schema:
-            #{JSON.stringify schema, null, 2}
-        """
-        throw new Error detail
+          validate = ajv.compile(schema)
+        catch err
+          throw new Error """ 
+            Error compiling schema with ajv: #{err.message} 
+          
+            Please check RAML for:
+            - Examples being defined more than once (resolves to more than one schema error)
 
-      if result.valid == false
-        # Provide the exact reasons for validation failure
-        subErrors = []
-        if result.error?.subErrors
-          for subError in result.error.subErrors
-            subErrors.push {
-              message: subError.message,
-              dataPath: subError.dataPath
-            }
+            Schema: #{JSON.stringify schema}"""
 
-            # subErrors can be duplicated for each object, don't need all
-            if subErrors.length > 5
-              break
-
-        detail = """
+        # Validate response against schema
+        valid = validate(instance)
+        if !valid 
+          throw new Error """
           schema validation failed:
-            #{result.error?.message}
+            #{JSON.stringify validate.errors, null, 2}
 
-          #{JSON.stringify instance, null, 2}
+          #{JSON.stringify instance, null, 2}"""
+      else
+        result = tv4.validateResult instance, schema, checkRecursive, banUnknown
+        if result.missing.length != 0
+          detail = """
+            missing/unresolved JSON schema $refs:
+              #{result.missing.join '\n'}
 
-          Possible reasons: #{JSON.stringify subErrors, null, 2}
-        """
-        throw new Error detail
+            schema:
+              #{JSON.stringify schema, null, 2}
+          """
+          throw new Error detail
+
+        if result.valid == false
+          # Provide the exact reasons for validation failure
+          subErrors = []
+          if result.error?.subErrors
+            for subError in result.error.subErrors
+              subErrors.push {
+                message: subError.message,
+                dataPath: subError.dataPath
+              }
+
+              # subErrors can be duplicated for each object, don't need all
+              if subErrors.length > 5
+                break
+
+          detail = """
+            schema validation failed:
+              #{result.error?.message}
+
+            #{JSON.stringify instance, null, 2}
+
+            Possible reasons: #{JSON.stringify subErrors, null, 2}
+          """
+          throw new Error detail
 
       # Update @response
       @response.body = instance
