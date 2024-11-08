@@ -14,11 +14,11 @@ Ajv = require("ajv-draft-04")
 addFormats = require("ajv-formats")
 
 class TestFactory
-  constructor: (config) ->
+  constructor: (config = {}) ->
     'use strict'
     @configuration = config
 
-    if config.options.schemas
+    if config.options?.schemas
       files = glob.sync config.options.schemas
 
       if files.length == 0

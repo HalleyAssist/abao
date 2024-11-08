@@ -1,7 +1,7 @@
 chai = require 'chai'
 mocha = require 'mocha'
 proxyquire = require('proxyquire').noCallThru()
-ramlParser = require 'raml-parser'
+raml2obj = require 'raml2obj'
 sinon = require 'sinon'
 sinonChai = require 'sinon-chai'
 
@@ -33,7 +33,7 @@ describe 'addTests(raml, tests, hooks, parent, callback, factory, sortFirst)', (
 
       before (done) ->
         ramlFile = "#{RAML_DIR}/machines-single_get.raml"
-        ramlParser.loadFile(ramlFile)
+        raml2obj.parse(ramlFile)
           .then (raml) ->
             callback = sinon.stub()
             callback.returns done()
@@ -88,7 +88,7 @@ describe 'addTests(raml, tests, hooks, parent, callback, factory, sortFirst)', (
 
         before (done) ->
           ramlFile = "#{RAML_DIR}/machines-1_get_1_post.raml"
-          ramlParser.loadFile(ramlFile)
+          raml2obj.parse(ramlFile)
             .then (raml) ->
               callback = sinon.stub()
               callback.returns done()
@@ -146,7 +146,7 @@ describe 'addTests(raml, tests, hooks, parent, callback, factory, sortFirst)', (
 
         before (done) ->
           ramlFile = "#{RAML_DIR}/machines-1_get_1_post.raml"
-          ramlParser.loadFile(ramlFile)
+          raml2obj.parse(ramlFile)
             .then (raml) ->
               callback = sinon.stub()
               callback.returns done()
@@ -204,7 +204,7 @@ describe 'addTests(raml, tests, hooks, parent, callback, factory, sortFirst)', (
 
       before (done) ->
         ramlFile = "#{RAML_DIR}/machines-ref_other_schemas.raml"
-        ramlParser.loadFile(ramlFile)
+        raml2obj.parse(ramlFile)
           .then (raml) ->
             callback = sinon.stub()
             callback.returns done()
@@ -253,7 +253,7 @@ describe 'addTests(raml, tests, hooks, parent, callback, factory, sortFirst)', (
 
       before (done) ->
         ramlFile = "#{RAML_DIR}/machines-inline_and_included_schemas.raml"
-        ramlParser.loadFile(ramlFile)
+        raml2obj.parse(ramlFile)
           .then (raml) ->
             callback = sinon.stub()
             callback.returns done()
@@ -302,7 +302,7 @@ describe 'addTests(raml, tests, hooks, parent, callback, factory, sortFirst)', (
 
       before (done) ->
         ramlFile = "#{RAML_DIR}/machines-three_levels.raml"
-        ramlParser.loadFile(ramlFile)
+        raml2obj.parse(ramlFile)
           .then (raml) ->
             callback = sinon.stub()
             callback.returns done()
@@ -346,7 +346,7 @@ describe 'addTests(raml, tests, hooks, parent, callback, factory, sortFirst)', (
 
       before (done) ->
         ramlFile = "#{RAML_DIR}/machines-no_method.raml"
-        ramlParser.loadFile(ramlFile)
+        raml2obj.parse(ramlFile)
           .then (raml) ->
             callback = sinon.stub()
             callback.returns done()
@@ -427,7 +427,7 @@ describe 'addTests(raml, tests, hooks, parent, callback, factory, sortFirst)', (
 
       before (done) ->
         ramlFile = "#{RAML_DIR}/music-vendor_content_type.raml"
-        ramlParser.loadFile(ramlFile)
+        raml2obj.parse(ramlFile)
           .then (raml) ->
             callback = sinon.stub()
             callback.returns done()
@@ -478,7 +478,7 @@ describe 'addTests(raml, tests, hooks, parent, callback, factory, sortFirst)', (
 
       before (done) ->
         ramlFile = "#{RAML_DIR}/machines-required_query_parameter.raml"
-        ramlParser.loadFile(ramlFile)
+        raml2obj.parse(ramlFile)
           .then (raml) ->
             callback = sinon.stub()
             callback.returns done()
@@ -510,7 +510,7 @@ describe 'addTests(raml, tests, hooks, parent, callback, factory, sortFirst)', (
 
       before (done) ->
         ramlFile = "#{RAML_DIR}/machines-non_required_query_parameter.raml"
-        ramlParser.loadFile(ramlFile)
+        raml2obj.parse(ramlFile)
           .then (raml) ->
             callback = sinon.stub()
             callback.returns done()

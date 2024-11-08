@@ -4,14 +4,14 @@ sinonChai = require 'sinon-chai'
 proxyquire = require('proxyquire').noCallThru()
 
 Test = require '../../lib/test'
-ramlParserStub = require 'raml-parser'
+ramlParserStub = require 'raml2obj'
 addTestsStub = require '../../lib/add-tests'
 addHooksStub = require '../../lib/add-hooks'
 runnerStub = require '../../lib/test-runner'
 hooksStub = require '../../lib/hooks'
 
 Abao = proxyquire '../../', {
-  'raml-parser': ramlParserStub,
+  'raml2obj': ramlParserStub,
   './add-tests': addTestsStub,
   './add-hooks': addHooksStub,
   './test-runner': runnerStub,
