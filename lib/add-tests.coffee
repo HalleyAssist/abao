@@ -151,6 +151,7 @@ addTests = (api, tests, hooks, parent, masterCallback, factory, sortFirst) ->
 
         responseBodies = response.body
         responseSchema = null
+        
         if responseBodies
           for responseBody in responseBodies
             # name will be equal to content-type
