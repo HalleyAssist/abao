@@ -62,8 +62,8 @@
     "request": "^2.85.0",
     "source-map-support": "^0.5.4",
     "tv4": "^1.2.7",
-    "underscore": "1.8.3",
-    "yargs": "^11.1.0",
+    "underscore": "^1.8.3",
+    "yargs": "^16.2.0",
     "webapi-parser": "^0.5.0"
   },
   "devDependencies": {
