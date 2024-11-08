@@ -6,8 +6,6 @@
 
 'use strict';
 
-require('coffee-script/register');
-
 var path = require('path');
 var fs   = require('fs');
 
