@@ -58,6 +58,8 @@ NPM documentation.
 
 ## Get Started Testing Your API
 
+### Using Bash/CLI
+
 For general usage, an API endpoint (i.e., web service to be tested) **must**
 be specified; this can be done implicitly or explicitly, with the latter
 having priority. If the RAML file to be tested provides a [baseUri][] property,
@@ -72,6 +74,27 @@ To explicitly specify the API endpoint, use the `--server` argument.
 ```bash
 $ abao api.raml --server http://localhost:8080
 ```
+
+### Using Node
+
+Abao was originally designed to be run via CLI. In some situations, it may be better to run it within Node (e.g. inside a Mocha test) to allow easier setup/teardown of a Node application.
+
+This branch can be run inside of Node using:
+
+```javascript
+const Abao = require('abao')
+
+const abao = new Abao(abaoOptions)
+await abao.run()
+```
+
+Note that not all options accepted by Abao's CLI interface are accepted. Accepted Abao options:
+
+- ramlfile: The filepath of the main RAML file (e.g. "api.raml")
+- hookfiles: The filepath of the additional test setup/teardown hooks file. This file should have a ".hooks" extension when importing `hooks` and `factory` modules since Abao mocks these on loading and Node will otherwise throw an error at runtime.
+- sorted: Whether to sort the RAML to run in a sensible way. See the CLI documentation on usage of this.
+- typesfile: The filepath of the RAML type file. See the CLI documentation on usage of this.
+- timeout: The timeout of test cases. See the CLI documentation on usage of this.
 
 ## Writing testable RAML
 
